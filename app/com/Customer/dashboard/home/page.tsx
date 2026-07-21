@@ -6,15 +6,17 @@ import { Star, Plus, Heart, ArrowUpRight, ArrowLeft } from 'lucide-react';
 import { heroData, categories, bestsellers, quizBannerData } from './data';
 import Navbar from './Navbar';
 
+// تم إضافة as const هنا لحل المشكلة نهائياً
 const fadeInContainer = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.15 } }
-};
+} as const;
 
+// تم إضافة as const هنا ليتعرف TypeScript على نوع 'spring' بدقة
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
   show: { opacity: 1, y: 0, transition: { type: 'spring', duration: 0.8 } }
-};
+} as const;
 
 export default function CustomerHomePage() {
   return (

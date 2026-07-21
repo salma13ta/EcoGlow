@@ -328,7 +328,7 @@ function CustomerAuth({ onPortalSwitch }: { onPortalSwitch: (p: Portal) => void 
                   <div>
                     <h2 className="font-display text-[21px] font-bold text-[#1a1a1a] leading-tight">Forgot password?</h2>
                     <p className="text-[12.5px] text-[#9a9a8a] mt-1.5 leading-relaxed">
-                      Enter your email and we'll send you a reset link.
+                      Enter your email and we&apos;ll send you a reset link.
                     </p>
                   </div>
                   <FloatingInput

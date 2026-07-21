@@ -6,6 +6,9 @@ export interface IncomingCase {
   receivedDate: string;
 }
 
+// إضافة تصدير باسم Case ليتوافق مع الاستيراد في صفحة Expert Dashboard
+export type Case = IncomingCase;
+
 export const incomingCases: IncomingCase[] = [
   {
     id: "C-0041",

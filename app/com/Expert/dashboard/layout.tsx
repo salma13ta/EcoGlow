@@ -1,33 +1,56 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { LayoutDashboard, Clock, Users, Settings, Menu, X } from 'lucide-react';
 
+const DEFAULT_EXPERT_NAME = 'Dr. Nadia Al-Zahra';
+const DEFAULT_EXPERT_SPECIALTY = 'Skin Specialist';
+const DEFAULT_EXPERT_IMAGE = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=150';
+
+// 1. إضافة متغيرات كاش حفظ الـ Reference القديم
+let cachedProfile = {
+  name: DEFAULT_EXPERT_NAME,
+  specialty: DEFAULT_EXPERT_SPECIALTY,
+  image: DEFAULT_EXPERT_IMAGE,
+};
+
+function readStoredExpertProfile() {
+  if (typeof window === 'undefined') return cachedProfile;
+
+  const name = localStorage.getItem('expert_name') || DEFAULT_EXPERT_NAME;
+  const specialty = localStorage.getItem('expert_specialty') || DEFAULT_EXPERT_SPECIALTY;
+  const image = localStorage.getItem('expert_image') || DEFAULT_EXPERT_IMAGE;
+
+  // 2. المقارنة بالقيم القديمة: لو مفيش تغيير رجّع نفس الـ Object بالضبط
+  if (
+    cachedProfile.name === name &&
+    cachedProfile.specialty === specialty &&
+    cachedProfile.image === image
+  ) {
+    return cachedProfile;
+  }
+
+  // 3. تحديث الـ Cache فقط لما القيم تتغير
+  cachedProfile = { name, specialty, image };
+  return cachedProfile;
+}
+
+function getServerExpertProfile() {
+  return cachedProfile;
+}
+
+function subscribeToExpertProfile(onStoreChange: () => void) {
+  window.addEventListener('profileUpdated', onStoreChange);
+  return () => window.removeEventListener('profileUpdated', onStoreChange);
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  // قيم افتراضية قبل التحميل
-  const [expertName, setExpertName] = useState('Dr. Nadia Al-Zahra');
-  const [expertSpecialty, setExpertSpecialty] = useState('Skin Specialist');
-  const [expertImage, setExpertImage] = useState('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=150');
-
-  const loadProfileData = () => {
-    const savedName = localStorage.getItem('expert_name');
-    const savedSpecialty = localStorage.getItem('expert_specialty');
-    const savedImage = localStorage.getItem('expert_image');
-
-    if (savedName) setExpertName(savedName);
-    if (savedSpecialty) setExpertSpecialty(savedSpecialty);
-    if (savedImage) setExpertImage(savedImage);
-  };
-
-  useEffect(() => {
-    loadProfileData();
-
-    // مستمع للتحديث الفوري عند الضغط على Save
-    window.addEventListener('profileUpdated', loadProfileData);
-    return () => window.removeEventListener('profileUpdated', loadProfileData);
-  }, []);
+  const expertProfile = useSyncExternalStore(
+    subscribeToExpertProfile,
+    readStoredExpertProfile,
+    getServerExpertProfile
+  );
 
   return (
     <div className="flex min-h-screen bg-[#F8F9F6] text-[#2C3E2B] font-sans relative">
@@ -125,13 +148,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* بروفايل الطبيب المتغير أسفل القائمة */}
         <div className="flex items-center gap-3 p-2 bg-[#DCE3DC] rounded-xl">
           <img 
-            src={expertImage} 
-            alt={expertName} 
+            src={expertProfile.image} 
+            alt={expertProfile.name} 
             className="w-10 h-10 rounded-full object-cover border border-white bg-white flex-shrink-0" 
           />
           <div className="overflow-hidden">
-            <h4 className="text-xs font-bold text-[#1E3E1A] truncate">{expertName}</h4>
-            <p className="text-[10px] text-[#6B7C6A] truncate">{expertSpecialty}</p>
+            <h4 className="text-xs font-bold text-[#1E3E1A] truncate">{expertProfile.name}</h4>
+            <p className="text-[10px] text-[#6B7C6A] truncate">{expertProfile.specialty}</p>
           </div>
         </div>
       </aside>

@@ -1,27 +1,32 @@
 // app/com/Expert/dashboard/settings/page.tsx
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Save, Camera } from 'lucide-react';
 
+const DEFAULT_NAME = 'Dr. Nadia Al-Zahra';
+const DEFAULT_SPECIALTY = 'Skin & Dermatology Specialist';
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=150';
+
+function readInitialSettings() {
+  if (typeof window === 'undefined') {
+    return { name: DEFAULT_NAME, specialty: DEFAULT_SPECIALTY, image: DEFAULT_IMAGE };
+  }
+
+  return {
+    name: localStorage.getItem('expert_name') || DEFAULT_NAME,
+    specialty: localStorage.getItem('expert_specialty') || DEFAULT_SPECIALTY,
+    image: localStorage.getItem('expert_image') || DEFAULT_IMAGE,
+  };
+}
+
 export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [name, setName] = useState('Dr. Nadia Al-Zahra');
-  const [specialty, setSpecialty] = useState('Skin & Dermatology Specialist');
-  const [image, setImage] = useState('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=150');
 
-  // تحميل البيانات المخزنة فور فتح الصفحة
-  useEffect(() => {
-    const savedName = localStorage.getItem('expert_name');
-    const savedSpecialty = localStorage.getItem('expert_specialty');
-    const savedImage = localStorage.getItem('expert_image');
-
-    if (savedName) setName(savedName);
-    if (savedSpecialty) setSpecialty(savedSpecialty);
-    if (savedImage) setImage(savedImage);
-  }, []);
+  const [name, setName] = useState(() => readInitialSettings().name);
+  const [specialty, setSpecialty] = useState(() => readInitialSettings().specialty);
+  const [image, setImage] = useState(() => readInitialSettings().image);
 
   // دالة التعامل مع رفع صورة جديدة
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

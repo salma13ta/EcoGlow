@@ -1,25 +1,26 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { ChevronLeft, Check, Camera, Leaf, UploadCloud, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, Check, Camera, Leaf, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { CONCERNS, SKIN_TYPES } from "./data";
 
+// إضافة as const هنا وفي الكائنات التالية تحل المشكلة تماماً
 const pageVariants = {
   initial: { opacity: 0, x: 20 },
   animate: { opacity: 1, x: 0, transition: { duration: 0.4, ease: "easeOut" } },
   exit: { opacity: 0, x: -20, transition: { duration: 0.3, ease: "easeIn" } }
-};
+} as const;
 
 const containerVariants = {
   animate: { transition: { staggerChildren: 0.05 } }
-};
+} as const;
 
 const itemVariants = {
   initial: { opacity: 0, y: 10 },
   animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
+} as const;
 
 export default function Page() {
   const router = useRouter();
@@ -80,7 +81,7 @@ export default function Page() {
               </div>
               <h2 className="font-serif text-3xl font-bold text-[#1E3E1A] mb-3">Request Received!</h2>
               <p className="text-sm text-[#5C6E5B] max-w-sm mx-auto leading-relaxed mb-8">
-                Your skin profile has been safely shared with our certified experts. You'll receive your personalized routine inside your dashboard within 24 hours.
+                Your skin profile has been safely shared with our certified experts. You&apos;ll receive your personalized routine inside your dashboard within 24 hours.
               </p>
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -128,7 +129,7 @@ export default function Page() {
                 {step === 1 && (
                   <motion.div key="step1" variants={pageVariants} initial="initial" animate="animate" exit="exit">
                     <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#1E3E1A] text-center mb-2">
-                      What's your main concern?
+                      What&apos;s your main concern?
                     </h1>
                     <p className="text-sm text-[#8A9B89] text-center mb-10">
                       Select your primary skin concern and type to get started.

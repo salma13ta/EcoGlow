@@ -16,10 +16,12 @@ const navLinks = [
 ];
 
 interface NavbarProps {
-    onCartClick?: () => void; // دالة خارجية إضافية لو رغبت في استخدامها
+    cartCount?: number;
+    onCartClick?: () => void;
+    onProfileClick?: () => void;
 }
 
-export default function Navbar({ onCartClick }: NavbarProps) {
+export default function Navbar({ cartCount: externalCartCount, onCartClick, onProfileClick }: NavbarProps) {
     const pathname = usePathname();
     
     // حالات التحكم في فتح وقفل النوافذ (Modals State)
@@ -34,13 +36,13 @@ export default function Navbar({ onCartClick }: NavbarProps) {
     });
 
     // منتجات تجريبية داخل السلة (يمكنك استبدالها لاحقاً بـ Context أو Redux أو Props)
-    const [cartItems, setCartItems] = useState([
+    const [cartItems, setCartItems] = useState<{ id: string | number; name: string; price: number; qty: number }[]>([
         { id: 1, name: 'EcoGlow Organic Serum', price: 25.00, qty: 1 },
         { id: 2, name: 'Hydrating Face Cream', price: 18.50, qty: 2 },
     ]);
 
-    // دالة تحديث كميات المنتجات داخل السلة
-    const handleUpdateQty = (id: number, change: number) => {
+    // دالة تحديث كميات المنتجات داخل السلة (تم التعديل هنا لتستقبل string | number)
+    const handleUpdateQty = (id: string | number, change: number) => {
         setCartItems((prevItems) =>
             prevItems
                 .map((item) =>
@@ -50,8 +52,24 @@ export default function Navbar({ onCartClick }: NavbarProps) {
         );
     };
 
-    // حساب إجمالي عدد المنتجات لعرضه فوق أيقونة السلة
-    const cartCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
+    const internalCartCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
+    const cartCount = externalCartCount ?? internalCartCount;
+
+    const handleCartClick = () => {
+        if (onCartClick) {
+            onCartClick();
+        } else {
+            setIsCartOpen(true);
+        }
+    };
+
+    const handleProfileClick = () => {
+        if (onProfileClick) {
+            onProfileClick();
+        } else {
+            setIsProfileOpen(true);
+        }
+    };
 
     return (
         <>
@@ -94,10 +112,7 @@ export default function Navbar({ onCartClick }: NavbarProps) {
                             {/* زر الحقيبة للدسك توب */}
                             <motion.button 
                                 whileHover={{ scale: 1.05 }} 
-                                onClick={() => {
-                                    setIsCartOpen(true);
-                                    if (onCartClick) onCartClick();
-                                }} 
+                                onClick={handleCartClick}
                                 className="relative p-2 hover:bg-[#F0EDE6] rounded-full transition-colors"
                             >
                                 <ShoppingBag size={22} />
@@ -118,7 +133,7 @@ export default function Navbar({ onCartClick }: NavbarProps) {
                             {/* زر البروفايل للدسك توب */}
                             <motion.button 
                                 whileHover={{ scale: 1.05 }} 
-                                onClick={() => setIsProfileOpen(true)}
+                                onClick={handleProfileClick}
                                 className="p-2 hover:bg-[#F0EDE6] rounded-full transition-colors"
                             >
                                 <User size={22} />
@@ -151,10 +166,7 @@ export default function Navbar({ onCartClick }: NavbarProps) {
 
                     {/* زر السلة للموبايل */}
                     <button 
-                        onClick={() => {
-                            setIsCartOpen(true);
-                            if (onCartClick) onCartClick();
-                        }}
+                        onClick={handleCartClick}
                         className={`flex flex-col items-center justify-center w-12 h-12 transition-colors ${isCartOpen ? 'text-[#1E3E1A]' : 'text-[#8A9B89] hover:text-[#1E3E1A]'} relative`}
                     >
                         <ShoppingBag size={20} className={isCartOpen ? 'scale-110 text-[#1E3E1A]' : ''} />
@@ -168,7 +180,7 @@ export default function Navbar({ onCartClick }: NavbarProps) {
 
                     {/* زر فتح البروفايل للموبايل */}
                     <button 
-                        onClick={() => setIsProfileOpen(true)}
+                        onClick={handleProfileClick}
                         className={`flex flex-col items-center justify-center w-12 h-12 transition-colors ${isProfileOpen ? 'text-[#1E3E1A]' : 'text-[#8A9B89] hover:text-[#1E3E1A]'}`}
                     >
                         <User size={20} className={isProfileOpen ? 'scale-110 text-[#1E3E1A]' : ''} />
@@ -182,21 +194,24 @@ export default function Navbar({ onCartClick }: NavbarProps) {
             {/* ---------------------------------------------------- */}
             
             {/* نافذة البروفايل */}
-            <ProfileDialog 
-                isOpen={isProfileOpen} 
-                onClose={() => setIsProfileOpen(false)} 
-                profile={profile}
-                setProfile={setProfile}
-            />
+            {!onProfileClick && (
+                <ProfileDialog 
+                    isOpen={isProfileOpen} 
+                    onClose={() => setIsProfileOpen(false)} 
+                    profile={profile}
+                    setProfile={setProfile}
+                />
+            )}
 
-            {/* نافذة السلة - تأخذ حالة المنتجات وبيانات الشحن المتزامنة من البروفايل */}
-            <CartDialog 
-                isOpen={isCartOpen} 
-                onClose={() => setIsCartOpen(false)} 
-                cartItems={cartItems} 
-                onUpdateQty={handleUpdateQty} 
-                userData={profile} 
-            />
+            {!onCartClick && (
+                <CartDialog 
+                    isOpen={isCartOpen} 
+                    onClose={() => setIsCartOpen(false)} 
+                    cartItems={cartItems} 
+                    onUpdateQty={handleUpdateQty} 
+                    userData={profile} 
+                />
+            )}
         </>
     );
 }

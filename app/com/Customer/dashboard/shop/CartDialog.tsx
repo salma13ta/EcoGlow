@@ -4,8 +4,29 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, User, Phone } from 'lucide-react';
 
-export default function CartDialog({ isOpen, onClose, cartItems = [], onUpdateQty, userData }: any) {
-  const total = cartItems.reduce((acc: number, item: any) => acc + (item.price * item.qty), 0);
+interface CartItem {
+  id: string | number;
+  name: string;
+  price: number;
+  qty: number;
+}
+
+interface UserData {
+  name?: string;
+  phone?: string;
+  address?: string;
+}
+
+interface CartDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  cartItems?: CartItem[];
+  onUpdateQty: (id: string | number, delta: number) => void;
+  userData?: UserData;
+}
+
+export default function CartDialog({ isOpen, onClose, cartItems = [], onUpdateQty, userData }: CartDialogProps) {
+  const total = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
 
   return (
     <AnimatePresence>
@@ -26,11 +47,11 @@ export default function CartDialog({ isOpen, onClose, cartItems = [], onUpdateQt
               <button onClick={onClose} className="p-2 hover:bg-[#E4EBE3] rounded-full transition-colors"><X size={20} /></button>
             </div>
             
-            <div className="flex-1 overflow-y-auto space-y-4PR">
+            <div className="flex-1 overflow-y-auto space-y-4">
               {cartItems.length === 0 ? (
                 <p className="text-sm text-[#8A9B89] text-center py-8">Your cart is empty.</p>
               ) : (
-                cartItems.map((item: any) => (
+                cartItems.map((item) => (
                   <div key={item.id} className="flex justify-between items-center border-b border-[#E4EBE3] pb-4">
                     <div className="text-sm font-semibold text-[#1E3E1A]">{item.name}</div>
                     <div className="flex items-center gap-3">

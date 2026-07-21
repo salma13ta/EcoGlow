@@ -5,7 +5,7 @@ import { Star, ChevronLeft, Plus, Heart, Sparkles, ShoppingBag } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "../home/Navbar";
 import CartDialog from "./CartDialog";
-import ProfileDialog from "../home/ProfileDialog"; // تأكدي من استيراد الملف
+import ProfileDialog from "../home/ProfileDialog";
 import { Product, PRODUCTS } from "../shop/shopData";
 
 type ViewMode = "grid" | "detail";
@@ -16,20 +16,20 @@ export default function ShopPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
 
-  // 1. حالة البروفايل المشتركة (تُعرف هنا لتكون متاحة للجميع)
+  // 1. حالة البروفايل المشتركة
   const [userProfile, setUserProfile] = useState({
     name: 'Ahmed Mohamed',
     phone: '01012345678',
     address: 'Mansoura, Egypt'
   });
 
-  const [cartItems, setCartItems] = useState<{ id: string; name: string; qty: number; price: number }[]>([]);
+  // السماح بالـ id أن يكون string أو number ليتوافق مع CartDialog
+  const [cartItems, setCartItems] = useState<{ id: string | number; name: string; qty: number; price: number }[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false); // حالة فتح البروفايل
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
 
-  // ... (باقي الدوال handleAddToCart, updateQty, triggerToast تبقى كما هي)
   const handleAddToCart = (product: Product, count: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setCartItems(prev => {
@@ -40,7 +40,8 @@ export default function ShopPage() {
     triggerToast(`Added ${count} ${product.name} to cart! 🛍️`);
   };
 
-  const updateQty = (id: string, delta: number) => {
+  // تعديل النوع ليكون string | number
+  const updateQty = (id: string | number, delta: number) => {
     setCartItems(prev => prev.map(item => 
       item.id === id ? { ...item, qty: Math.max(0, item.qty + delta) } : item
     ).filter(item => item.qty > 0));
@@ -61,14 +62,14 @@ export default function ShopPage() {
   return (
     <div className="bg-[#FAF8F5] min-h-screen text-[#1E3E1A] font-sans antialiased pb-16" dir="ltr">
       
-      {/* تأكدي من تمرير onProfileClick للـ Navbar */}
+      {/* Navbar */}
       <Navbar 
         cartCount={totalCartCount} 
         onCartClick={() => setIsCartOpen(true)} 
         onProfileClick={() => setIsProfileOpen(true)} 
       />
 
-      {/* تمرير userProfile للسلة */}
+      {/* Cart Dialog */}
       <CartDialog 
         isOpen={isCartOpen} 
         onClose={() => setIsCartOpen(false)} 
@@ -77,7 +78,7 @@ export default function ShopPage() {
         userData={userProfile} 
       />
 
-      {/* تمرير البيانات والـ setter للبروفايل */}
+      {/* Profile Dialog */}
       <ProfileDialog 
         isOpen={isProfileOpen} 
         onClose={() => setIsProfileOpen(false)}
@@ -85,7 +86,6 @@ export default function ShopPage() {
         setProfile={setUserProfile}
       />
 
-      {/* ... (باقي كود الـ Grid و الـ Detail يبقى كما هو) */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         {viewMode === "grid" ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

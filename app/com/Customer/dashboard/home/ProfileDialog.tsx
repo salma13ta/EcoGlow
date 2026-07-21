@@ -2,14 +2,34 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Package, MapPin, Phone, Save, Edit2, CheckCircle } from 'lucide-react';
+import { X, User, Package, MapPin, Phone, Save, Edit2, CheckCircle, LucideIcon } from 'lucide-react';
 
 const previousOrders = [
   { id: '#ORD-789', date: 'Oct 12, 2025', status: 'Delivered', total: '$45.00' },
   { id: '#ORD-456', date: 'Sep 28, 2025', status: 'Delivered', total: '$120.00' },
 ];
 
-export default function ProfileDialog({ isOpen, onClose, profile = {}, setProfile }: any) {
+export interface UserProfile {
+  name: string;
+  phone: string;
+  address: string;
+}
+
+interface ProfileDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  profile: UserProfile;
+  setProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
+}
+
+// تحديد أنواع الحقول بشكل صريح لتفادي مشاكل TypeScript
+const profileFields: { icon: LucideIcon; label: string; name: keyof UserProfile }[] = [
+  { icon: User, label: 'Name', name: 'name' },
+  { icon: Phone, label: 'Phone', name: 'phone' },
+  { icon: MapPin, label: 'Address', name: 'address' }
+];
+
+export default function ProfileDialog({ isOpen, onClose, profile, setProfile }: ProfileDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
 
   return (
@@ -40,26 +60,21 @@ export default function ProfileDialog({ isOpen, onClose, profile = {}, setProfil
                 </button>
               </div>
               <div className="space-y-4">
-                {[
-                  { icon: User, label: 'Name', name: 'name' },
-                  { icon: Phone, label: 'Phone', name: 'phone' },
-                  { icon: MapPin, label: 'Address', name: 'address' }
-                ].map((item, i) => (
+                {profileFields.map((item, i) => (
                   <div key={i} className="flex gap-4">
                     <div className="p-2 bg-[#F0EDE6] rounded-lg h-fit"><item.icon size={16} className="text-[#1E3E1A]" /></div>
                     <div className="w-full">
                       <p className="text-[10px] uppercase tracking-wider text-[#8A9B89]">{item.label}</p>
-                    {isEditing ? (
+                      {isEditing ? (
                         <input 
                           name={item.name} 
                           value={profile?.[item.name] || ""} 
-                          // استخدام (prev) يضمن إن الـ React ياخد أحدث State بدون مشاكل الـ Closures وتظهر الكتابة فوراً
-                          onChange={(e) => setProfile((prev: any) => ({ ...prev, [e.target.name]: e.target.value }))} 
+                          onChange={(e) => setProfile((prev) => ({ ...prev, [e.target.name]: e.target.value }))} 
                           className="w-full bg-transparent border-b border-[#1E3E1A] outline-none text-[#1E3E1A] font-medium" 
                         />
-                        ) : (
+                      ) : (
                         <p className="text-[#1E3E1A] font-medium">{profile?.[item.name] || ""}</p>
-                        )}
+                      )}
                     </div>
                   </div>
                 ))}
