@@ -3,19 +3,20 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 import { Clock, ChevronRight, SlidersHorizontal, Download, CheckCircle, Star } from 'lucide-react';
 import { incomingCases, Case } from './casesData';
 
 export default function ExpertDashboard() {
   const router = useRouter();
 
-  const containerVariants = {
+  // تحديد نوع Variants يحل مشكلة type: 'spring' مع TypeScript
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.08 } }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 15 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 120 } }
   };
