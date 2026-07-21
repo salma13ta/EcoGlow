@@ -1,49 +1,81 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-import { ChevronLeft, Check, Camera, Leaf, Image as ImageIcon } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useRef, useEffect } from "react";
+import { ChevronLeft, Check, Camera, Leaf, ImageIcon, X } from "lucide-react";
+import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { CONCERNS, SKIN_TYPES } from "./data";
 
-// إضافة as const هنا وفي الكائنات التالية تحل المشكلة تماماً
-const pageVariants = {
+// تحديد الأنواع بصريح العبارة بدلاً من as const لتفادي تعارض أنواع Framer Motion
+const pageVariants: Variants = {
   initial: { opacity: 0, x: 20 },
   animate: { opacity: 1, x: 0, transition: { duration: 0.4, ease: "easeOut" } },
-  exit: { opacity: 0, x: -20, transition: { duration: 0.3, ease: "easeIn" } }
-} as const;
+  exit: { opacity: 0, x: -20, transition: { duration: 0.3, ease: "easeIn" } },
+};
 
-const containerVariants = {
-  animate: { transition: { staggerChildren: 0.05 } }
-} as const;
+const containerVariants: Variants = {
+  animate: { transition: { staggerChildren: 0.05 } },
+};
 
-const itemVariants = {
+const itemVariants: Variants = {
   initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-} as const;
+  animate: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } },
+};
 
 export default function Page() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
   const [selectedSkinType, setSelectedSkinType] = useState<string | null>(null);
-  
-  // حفظ ملفات الصور المرفوعة
+
+  // ملفات الصور المرفوعة وروابط المعاينة
   const [frontPhoto, setFrontPhoto] = useState<File | null>(null);
   const [cheekPhoto, setCheekPhoto] = useState<File | null>(null);
+  const [frontPreview, setFrontPreview] = useState<string | null>(null);
+  const [cheekPreview, setCheekPreview] = useState<string | null>(null);
 
-  // مراجع الـ Input لفتح اختيار الملفات
+  // مراجع الـ Input
   const frontInputRef = useRef<HTMLInputElement>(null);
   const cheekInputRef = useRef<HTMLInputElement>(null);
 
   const [notes, setNotes] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  // إنشاء وتنظيف روابط المعاينة تلقائياً لمنع تسريب الذاكرة
+  useEffect(() => {
+    if (frontPhoto) {
+      const url = URL.createObjectURL(frontPhoto);
+      setFrontPreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setFrontPreview(null);
+    }
+  }, [frontPhoto]);
+
+  useEffect(() => {
+    if (cheekPhoto) {
+      const url = URL.createObjectURL(cheekPhoto);
+      setCheekPreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setCheekPreview(null);
+    }
+  }, [cheekPhoto]);
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>, type: "front" | "cheek") => {
     if (e.target.files && e.target.files[0]) {
-      if (type === "front") setFrontPhoto(e.target.files[0]);
-      if (type === "cheek") setCheekPhoto(e.target.files[0]);
+      const file = e.target.files[0];
+      if (type === "front") setFrontPhoto(file);
+      if (type === "cheek") setCheekPhoto(file);
     }
+    // تصفير قيمة المدخل حتى يمكن إرفاق نفس الصورة مرة أخرى إذا لزم الأمر
+    e.target.value = "";
+  };
+
+  const removePhoto = (e: React.MouseEvent, type: "front" | "cheek") => {
+    e.stopPropagation();
+    if (type === "front") setFrontPhoto(null);
+    if (type === "cheek") setCheekPhoto(null);
   };
 
   const handleReset = () => {
@@ -57,19 +89,16 @@ export default function Page() {
     router.push("/com/Customer/dashboard/home");
   };
 
-  // شروط التحقق لمنع تخطي الخطوات بدون إدخال البيانات
+  // التحقق من صلاحية البيانات بكل خطوة
   const isStep1Valid = selectedConcern !== null && selectedSkinType !== null;
   const isStep2Valid = frontPhoto !== null && cheekPhoto !== null;
 
   return (
     <div className="bg-[#FAF8F5] min-h-screen text-[#1E3E1A] font-sans antialiased selection:bg-[#1E3E1A]/10 pb-36 md:pb-16">
-      
-      {/* سياق محتوى الصفحة الرئيسي */}
       <div className="max-w-2xl mx-auto px-4 py-8 md:py-12">
         <AnimatePresence mode="wait">
-          
           {submitted ? (
-            <motion.div 
+            <motion.div
               key="success"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -93,17 +122,16 @@ export default function Page() {
               </motion.button>
             </motion.div>
           ) : (
-            
             <motion.div key="form-steps">
               {/* زر العودة */}
               <button
-                onClick={() => step > 1 ? setStep(step - 1) : router.push("/com/Customer/dashboard/home")}
+                onClick={() => (step > 1 ? setStep(step - 1) : router.push("/com/Customer/dashboard/home"))}
                 className="flex items-center gap-1.5 text-sm font-medium text-[#8A9B89] hover:text-[#1E3E1A] mb-8 transition-colors group"
               >
                 <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" /> Back
               </button>
 
-              {/* خط الخطوات العلوي الأنيق */}
+              {/* شريط التقدم بين الخطوات */}
               <div className="flex items-center justify-between max-w-md mx-auto mb-12 relative px-4">
                 <div className="absolute top-4 left-6 right-6 h-[1px] bg-[#E4EBE3] z-0" />
                 {[1, 2, 3].map((s) => (
@@ -124,8 +152,7 @@ export default function Page() {
               </div>
 
               <AnimatePresence mode="wait">
-                
-                {/* الخطوة الأولى: المشكلة ونوع البشرة */}
+                {/* الخطوة 1 */}
                 {step === 1 && (
                   <motion.div key="step1" variants={pageVariants} initial="initial" animate="animate" exit="exit">
                     <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#1E3E1A] text-center mb-2">
@@ -181,8 +208,8 @@ export default function Page() {
                       disabled={!isStep1Valid}
                       onClick={() => setStep(2)}
                       className={`w-full py-4 rounded-full text-sm font-bold uppercase tracking-wider transition-all duration-300 ${
-                        isStep1Valid 
-                          ? "bg-[#1E3E1A] text-white hover:bg-[#2c5927] shadow-md cursor-pointer" 
+                        isStep1Valid
+                          ? "bg-[#1E3E1A] text-white hover:bg-[#2c5927] shadow-md cursor-pointer"
                           : "bg-[#D1CFC7] text-white opacity-50 cursor-not-allowed"
                       }`}
                     >
@@ -191,7 +218,7 @@ export default function Page() {
                   </motion.div>
                 )}
 
-                {/* الخطوة الثانية: رفع الصور الفعلي مع تشغيل الكاميرا والملفات */}
+                {/* الخطوة 2: رفع وتحميل الصور مع إمكانية المعاينة والإزالة */}
                 {step === 2 && (
                   <motion.div key="step2" variants={pageVariants} initial="initial" animate="animate" exit="exit">
                     <h1 className="font-serif text-3xl font-bold text-[#1E3E1A] mb-2">Upload skin photos</h1>
@@ -200,27 +227,33 @@ export default function Page() {
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                      {/* حقل رفع الصورة الأمامية */}
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
+                      {/* حقل الصورة الأمامية */}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
                         ref={frontInputRef}
-                        onChange={(e) => handlePhotoChange(e, "front")} 
+                        onChange={(e) => handlePhotoChange(e, "front")}
                       />
                       <div
                         onClick={() => frontInputRef.current?.click()}
-                        className={`aspect-square rounded-2xl border-2 border-dashed bg-white/60 flex flex-col items-center justify-center p-4 text-center cursor-pointer transition-all group ${
+                        className={`relative aspect-square rounded-2xl border-2 border-dashed bg-white/60 flex flex-col items-center justify-center p-2 text-center cursor-pointer transition-all overflow-hidden group ${
                           frontPhoto ? "border-[#1E3E1A] bg-white" : "border-[#E4EBE3] hover:border-[#1E3E1A]/50"
                         }`}
                       >
-                        {frontPhoto ? (
+                        {frontPreview ? (
                           <>
-                            <div className="w-12 h-12 rounded-full bg-[#1E3E1A]/10 flex items-center justify-center text-[#1E3E1A] mb-3">
-                              <ImageIcon size={20} />
+                            <img src={frontPreview} alt="Front Face" className="w-full h-full object-cover rounded-xl" />
+                            <button
+                              onClick={(e) => removePhoto(e, "front")}
+                              className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-full hover:bg-black/80 transition-colors z-10"
+                            >
+                              <X size={14} />
+                            </button>
+                            <div className="absolute bottom-2 left-2 right-2 bg-white/90 backdrop-blur-sm p-2 rounded-lg text-center border border-[#E4EBE3]">
+                              <span className="text-[11px] font-bold text-[#1E3E1A] block truncate">{frontPhoto?.name}</span>
+                              <span className="text-[9px] text-[#8A9B89]">Tap to change</span>
                             </div>
-                            <span className="text-xs font-bold text-[#1E3E1A] truncate max-w-full">{frontPhoto.name}</span>
-                            <span className="text-[11px] text-[#8A9B89] mt-1">Tap to change</span>
                           </>
                         ) : (
                           <>
@@ -233,27 +266,33 @@ export default function Page() {
                         )}
                       </div>
 
-                      {/* حقل رفع صورة الخد */}
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
+                      {/* حقل صورة الخد */}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
                         ref={cheekInputRef}
-                        onChange={(e) => handlePhotoChange(e, "cheek")} 
+                        onChange={(e) => handlePhotoChange(e, "cheek")}
                       />
                       <div
                         onClick={() => cheekInputRef.current?.click()}
-                        className={`aspect-square rounded-2xl border-2 border-dashed bg-white/60 flex flex-col items-center justify-center p-4 text-center cursor-pointer transition-all group ${
+                        className={`relative aspect-square rounded-2xl border-2 border-dashed bg-white/60 flex flex-col items-center justify-center p-2 text-center cursor-pointer transition-all overflow-hidden group ${
                           cheekPhoto ? "border-[#1E3E1A] bg-white" : "border-[#E4EBE3] hover:border-[#1E3E1A]/50"
                         }`}
                       >
-                        {cheekPhoto ? (
+                        {cheekPreview ? (
                           <>
-                            <div className="w-12 h-12 rounded-full bg-[#1E3E1A]/10 flex items-center justify-center text-[#1E3E1A] mb-3">
-                              <ImageIcon size={20} />
+                            <img src={cheekPreview} alt="Cheek Photo" className="w-full h-full object-cover rounded-xl" />
+                            <button
+                              onClick={(e) => removePhoto(e, "cheek")}
+                              className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-full hover:bg-black/80 transition-colors z-10"
+                            >
+                              <X size={14} />
+                            </button>
+                            <div className="absolute bottom-2 left-2 right-2 bg-white/90 backdrop-blur-sm p-2 rounded-lg text-center border border-[#E4EBE3]">
+                              <span className="text-[11px] font-bold text-[#1E3E1A] block truncate">{cheekPhoto?.name}</span>
+                              <span className="text-[9px] text-[#8A9B89]">Tap to change</span>
                             </div>
-                            <span className="text-xs font-bold text-[#1E3E1A] truncate max-w-full">{cheekPhoto.name}</span>
-                            <span className="text-[11px] text-[#8A9B89] mt-1">Tap to change</span>
                           </>
                         ) : (
                           <>
@@ -275,12 +314,19 @@ export default function Page() {
                     </div>
 
                     <div className="flex gap-4">
-                      <button onClick={() => setStep(1)} className="px-6 py-3.5 border border-[#E4EBE3] rounded-full text-xs font-bold uppercase tracking-wider text-[#5C6E5B] bg-white/60 hover:bg-white transition-colors">Back</button>
-                      <button 
+                      <button
+                        onClick={() => setStep(1)}
+                        className="px-6 py-3.5 border border-[#E4EBE3] rounded-full text-xs font-bold uppercase tracking-wider text-[#5C6E5B] bg-white/60 hover:bg-white transition-colors"
+                      >
+                        Back
+                      </button>
+                      <button
                         disabled={!isStep2Valid}
-                        onClick={() => setStep(3)} 
+                        onClick={() => setStep(3)}
                         className={`flex-1 py-3.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md ${
-                          isStep2Valid ? "bg-[#1E3E1A] text-white hover:bg-[#2c5927]" : "bg-[#D1CFC7] text-white opacity-60 cursor-not-allowed"
+                          isStep2Valid
+                            ? "bg-[#1E3E1A] text-white hover:bg-[#2c5927]"
+                            : "bg-[#D1CFC7] text-white opacity-60 cursor-not-allowed"
                         }`}
                       >
                         Continue
@@ -289,7 +335,7 @@ export default function Page() {
                   </motion.div>
                 )}
 
-                {/* الخطوة الثالثة: الملاحظات والمراجعة */}
+                {/* الخطوة 3 */}
                 {step === 3 && (
                   <motion.div key="step3" variants={pageVariants} initial="initial" animate="animate" exit="exit">
                     <h1 className="font-serif text-3xl font-bold text-[#1E3E1A] mb-2">Anything else to share?</h1>
@@ -304,11 +350,11 @@ export default function Page() {
                       className="w-full h-32 bg-white/80 border border-[#E4EBE3] rounded-2xl px-4 py-3.5 text-sm text-[#1E3E1A] placeholder:text-[#A39E93] outline-none focus:border-[#1E3E1A] focus:ring-1 focus:ring-[#1E3E1A] transition-all resize-none mb-6"
                     />
 
-                    {/* كارت ملخص مراجعة البيانات قبل الإرسال النهائي */}
+                    {/* بطاقة ملخص المراجعة */}
                     <div className="bg-white rounded-2xl p-5 border border-[#E4EBE3] mb-8 space-y-3">
                       <h4 className="text-[11px] font-bold uppercase tracking-widest text-[#8A9B89] border-b border-[#FAF8F5] pb-2 mb-1">Profile Summary</h4>
                       {[
-                        ["Main concern", selectedConcern ? CONCERNS.find(c => c.id === selectedConcern)?.label : "—"],
+                        ["Main concern", selectedConcern ? CONCERNS.find((c) => c.id === selectedConcern)?.label : "—"],
                         ["Skin type", selectedSkinType ?? "—"],
                         ["Photos uploaded", frontPhoto && cheekPhoto ? "2 of 2 Photos Ready" : "Missing photos"],
                       ].map(([label, value]) => (
@@ -320,8 +366,18 @@ export default function Page() {
                     </div>
 
                     <div className="flex gap-4">
-                      <button onClick={() => setStep(2)} className="px-6 py-3.5 border border-[#E4EBE3] rounded-full text-xs font-bold uppercase tracking-wider text-[#5C6E5B] bg-white/60 hover:bg-white transition-colors">Back</button>
-                      <button onClick={() => setSubmitted(true)} className="flex-1 bg-[#1E3E1A] text-white py-3.5 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-[#2c5927] shadow-md transition-all">Submit Consultation</button>
+                      <button
+                        onClick={() => setStep(2)}
+                        className="px-6 py-3.5 border border-[#E4EBE3] rounded-full text-xs font-bold uppercase tracking-wider text-[#5C6E5B] bg-white/60 hover:bg-white transition-colors"
+                      >
+                        Back
+                      </button>
+                      <button
+                        onClick={() => setSubmitted(true)}
+                        className="flex-1 bg-[#1E3E1A] text-white py-3.5 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-[#2c5927] shadow-md transition-all"
+                      >
+                        Submit Consultation
+                      </button>
                     </div>
                   </motion.div>
                 )}
