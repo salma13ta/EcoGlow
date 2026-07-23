@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { LayoutDashboard, Clock, Users, Settings, Menu, X } from 'lucide-react';
@@ -7,7 +8,7 @@ const DEFAULT_EXPERT_NAME = 'Dr. Nadia Al-Zahra';
 const DEFAULT_EXPERT_SPECIALTY = 'Skin Specialist';
 const DEFAULT_EXPERT_IMAGE = 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=150';
 
-// 1. إضافة متغيرات كاش حفظ الـ Reference القديم
+// 1. كاش حفظ مرجع البيانات (Reference caching)
 let cachedProfile = {
   name: DEFAULT_EXPERT_NAME,
   specialty: DEFAULT_EXPERT_SPECIALTY,
@@ -21,7 +22,7 @@ function readStoredExpertProfile() {
   const specialty = localStorage.getItem('expert_specialty') || DEFAULT_EXPERT_SPECIALTY;
   const image = localStorage.getItem('expert_image') || DEFAULT_EXPERT_IMAGE;
 
-  // 2. المقارنة بالقيم القديمة: لو مفيش تغيير رجّع نفس الـ Object بالضبط
+  // المقارنة بالقيم القديمة: إرجاع نفس الـ Object إذا لم تتغير البيانات
   if (
     cachedProfile.name === name &&
     cachedProfile.specialty === specialty &&
@@ -30,7 +31,7 @@ function readStoredExpertProfile() {
     return cachedProfile;
   }
 
-  // 3. تحديث الـ Cache فقط لما القيم تتغير
+  // تحديث الـ Cache فقط عند تغير القيم
   cachedProfile = { name, specialty, image };
   return cachedProfile;
 }
@@ -67,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        {/* زر القائمة (3 شرط) */}
+        {/* زر القائمة للموبايل */}
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="p-2 text-[#1E3E1A] rounded-lg hover:bg-[#DCE3DC] transition-colors"
@@ -94,7 +95,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         `}
       >
         <div>
-          {/* الشعار - يظهر في الديسك توب ويختفي في الموبايل لمنع التكرار */}
+          {/* الشعار للديسك توب */}
           <div className="hidden md:flex items-center gap-2 px-2 py-4 mb-6">
             <div className="w-8 h-8 bg-[#1E3E1A] rounded-br-xl rounded-tl-xl flex items-center justify-center text-white font-bold">EG</div>
             <div>
@@ -103,7 +104,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
 
-          {/* زر إغلاق صريح داخل القائمة للموبايل */}
+          {/* زر إغلاق للموبايل */}
           <div className="flex md:hidden justify-between items-center mb-6 pt-2 px-2">
             <span className="text-xs font-semibold text-[#6B7C6A] uppercase tracking-wider">Navigation</span>
             <button onClick={() => setIsSidebarOpen(false)} className="p-1 text-[#1E3E1A]">
@@ -147,6 +148,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* بروفايل الطبيب المتغير أسفل القائمة */}
         <div className="flex items-center gap-3 p-2 bg-[#DCE3DC] rounded-xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
             src={expertProfile.image} 
             alt={expertProfile.name} 

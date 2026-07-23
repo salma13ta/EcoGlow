@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { ChevronLeft, Check, Camera, Leaf, ImageIcon, X } from "lucide-react";
+import React, { useState, useRef, useMemo } from "react";
+import { ChevronLeft, Check, Camera, Leaf, X } from "lucide-react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { CONCERNS, SKIN_TYPES } from "./data";
 
-// تحديد الأنواع بصريح العبارة بدلاً من as const لتفادي تعارض أنواع Framer Motion
 const pageVariants: Variants = {
   initial: { opacity: 0, x: 20 },
   animate: { opacity: 1, x: 0, transition: { duration: 0.4, ease: "easeOut" } },
@@ -28,39 +27,24 @@ export default function Page() {
   const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
   const [selectedSkinType, setSelectedSkinType] = useState<string | null>(null);
 
-  // ملفات الصور المرفوعة وروابط المعاينة
   const [frontPhoto, setFrontPhoto] = useState<File | null>(null);
   const [cheekPhoto, setCheekPhoto] = useState<File | null>(null);
-  const [frontPreview, setFrontPreview] = useState<string | null>(null);
-  const [cheekPreview, setCheekPreview] = useState<string | null>(null);
 
-  // مراجع الـ Input
+  const frontPreview = useMemo(() => {
+    if (!frontPhoto) return null;
+    return URL.createObjectURL(frontPhoto);
+  }, [frontPhoto]);
+
+  const cheekPreview = useMemo(() => {
+    if (!cheekPhoto) return null;
+    return URL.createObjectURL(cheekPhoto);
+  }, [cheekPhoto]);
+
   const frontInputRef = useRef<HTMLInputElement>(null);
   const cheekInputRef = useRef<HTMLInputElement>(null);
 
   const [notes, setNotes] = useState("");
   const [submitted, setSubmitted] = useState(false);
-
-  // إنشاء وتنظيف روابط المعاينة تلقائياً لمنع تسريب الذاكرة
-  useEffect(() => {
-    if (frontPhoto) {
-      const url = URL.createObjectURL(frontPhoto);
-      setFrontPreview(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setFrontPreview(null);
-    }
-  }, [frontPhoto]);
-
-  useEffect(() => {
-    if (cheekPhoto) {
-      const url = URL.createObjectURL(cheekPhoto);
-      setCheekPreview(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setCheekPreview(null);
-    }
-  }, [cheekPhoto]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>, type: "front" | "cheek") => {
     if (e.target.files && e.target.files[0]) {
@@ -68,7 +52,6 @@ export default function Page() {
       if (type === "front") setFrontPhoto(file);
       if (type === "cheek") setCheekPhoto(file);
     }
-    // تصفير قيمة المدخل حتى يمكن إرفاق نفس الصورة مرة أخرى إذا لزم الأمر
     e.target.value = "";
   };
 
@@ -89,7 +72,6 @@ export default function Page() {
     router.push("/com/Customer/dashboard/home");
   };
 
-  // التحقق من صلاحية البيانات بكل خطوة
   const isStep1Valid = selectedConcern !== null && selectedSkinType !== null;
   const isStep2Valid = frontPhoto !== null && cheekPhoto !== null;
 
@@ -123,7 +105,6 @@ export default function Page() {
             </motion.div>
           ) : (
             <motion.div key="form-steps">
-              {/* زر العودة */}
               <button
                 onClick={() => (step > 1 ? setStep(step - 1) : router.push("/com/Customer/dashboard/home"))}
                 className="flex items-center gap-1.5 text-sm font-medium text-[#8A9B89] hover:text-[#1E3E1A] mb-8 transition-colors group"
@@ -131,7 +112,6 @@ export default function Page() {
                 <ChevronLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" /> Back
               </button>
 
-              {/* شريط التقدم بين الخطوات */}
               <div className="flex items-center justify-between max-w-md mx-auto mb-12 relative px-4">
                 <div className="absolute top-4 left-6 right-6 h-[1px] bg-[#E4EBE3] z-0" />
                 {[1, 2, 3].map((s) => (
@@ -152,7 +132,6 @@ export default function Page() {
               </div>
 
               <AnimatePresence mode="wait">
-                {/* الخطوة 1 */}
                 {step === 1 && (
                   <motion.div key="step1" variants={pageVariants} initial="initial" animate="animate" exit="exit">
                     <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#1E3E1A] text-center mb-2">
@@ -218,7 +197,6 @@ export default function Page() {
                   </motion.div>
                 )}
 
-                {/* الخطوة 2: رفع وتحميل الصور مع إمكانية المعاينة والإزالة */}
                 {step === 2 && (
                   <motion.div key="step2" variants={pageVariants} initial="initial" animate="animate" exit="exit">
                     <h1 className="font-serif text-3xl font-bold text-[#1E3E1A] mb-2">Upload skin photos</h1>
@@ -227,7 +205,6 @@ export default function Page() {
                     </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                      {/* حقل الصورة الأمامية */}
                       <input
                         type="file"
                         accept="image/*"
@@ -243,6 +220,7 @@ export default function Page() {
                       >
                         {frontPreview ? (
                           <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={frontPreview} alt="Front Face" className="w-full h-full object-cover rounded-xl" />
                             <button
                               onClick={(e) => removePhoto(e, "front")}
@@ -266,7 +244,6 @@ export default function Page() {
                         )}
                       </div>
 
-                      {/* حقل صورة الخد */}
                       <input
                         type="file"
                         accept="image/*"
@@ -282,6 +259,7 @@ export default function Page() {
                       >
                         {cheekPreview ? (
                           <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={cheekPreview} alt="Cheek Photo" className="w-full h-full object-cover rounded-xl" />
                             <button
                               onClick={(e) => removePhoto(e, "cheek")}
@@ -335,7 +313,6 @@ export default function Page() {
                   </motion.div>
                 )}
 
-                {/* الخطوة 3 */}
                 {step === 3 && (
                   <motion.div key="step3" variants={pageVariants} initial="initial" animate="animate" exit="exit">
                     <h1 className="font-serif text-3xl font-bold text-[#1E3E1A] mb-2">Anything else to share?</h1>
@@ -350,7 +327,6 @@ export default function Page() {
                       className="w-full h-32 bg-white/80 border border-[#E4EBE3] rounded-2xl px-4 py-3.5 text-sm text-[#1E3E1A] placeholder:text-[#A39E93] outline-none focus:border-[#1E3E1A] focus:ring-1 focus:ring-[#1E3E1A] transition-all resize-none mb-6"
                     />
 
-                    {/* بطاقة ملخص المراجعة */}
                     <div className="bg-white rounded-2xl p-5 border border-[#E4EBE3] mb-8 space-y-3">
                       <h4 className="text-[11px] font-bold uppercase tracking-widest text-[#8A9B89] border-b border-[#FAF8F5] pb-2 mb-1">Profile Summary</h4>
                       {[

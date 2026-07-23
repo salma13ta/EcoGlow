@@ -1,15 +1,14 @@
-// app/com/Expert/dashboard/pending/page.tsx
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Clock, ChevronRight, AlertCircle, Calendar, User } from 'lucide-react';
+import { Search, Filter, ChevronRight, AlertCircle, Calendar, User } from 'lucide-react';
 
-// 1. تصحيح المسار للذهاب إلى مجلد home المجاور
+// استيراد بيانات الحالات من المجلد المجاور
 import { incomingCases } from '../home/casesData';
 
-// 2. تعريف الـ Type هنا لكي لا يعترض TypeScript
+// تعريف واجهة البيانات لمنع أخطاء TypeScript
 interface Case {
   id: string;
   clientName: string;
@@ -20,13 +19,18 @@ interface Case {
 
 export default function PendingCasesPage() {
   const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // فلترة الحالات لتظهر فقط الحالات التي تحتاج مراجعة (Pending) أو قيد العمل (In-Progress)
-  const pendingCases = incomingCases.filter(
-    (item) => item.status === 'Pending' || item.status === 'In-Progress'
+  // فلترة الحالات المعلقة والتصفية حسب البحث
+  const pendingCases = (incomingCases as Case[]).filter(
+    (item) =>
+      (item.status === 'Pending' || item.status === 'In-Progress') &&
+      (item.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.problemType.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.id.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // إعدادات أنميشن القائمة (Stagger effect) لتعطي مظهر احترافي عند الدخول
+  // إعدادات أنميشن القائمة (Stagger effect)
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -41,27 +45,46 @@ export default function PendingCasesPage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-6 md:p-8 max-w-[1400px] mx-auto font-sans text-[#1E3E1A]">
       {/* الترويسة العليا */}
-      <div className="mb-6 md:mb-8">
-        <span className="text-[10px] md:text-[11px] font-bold uppercase tracking-widest text-[#8A9B89]">
-          Awaiting Action — الحالات المعلقة
-        </span>
-        <h2 className="text-2xl md:text-3xl font-serif text-[#1E3E1A] mt-1">Pending Cases</h2>
-        <p className="text-xs md:text-sm text-[#5C6E5B] mt-1">
-          You have <span className="text-[#D96B27] font-semibold">{pendingCases.length} cases</span> that require your clinical diagnosis.
-        </p>
+      <div className="mb-6 md:mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <span className="text-[10px] md:text-[11px] font-bold uppercase tracking-widest text-[#8A9B89]">
+            Awaiting Action — الحالات المعلقة
+          </span>
+          <h2 className="text-2xl md:text-3xl font-serif font-bold text-[#1E3E1A] mt-1">Pending Cases</h2>
+          <p className="text-xs md:text-sm text-[#5C6E5B] mt-1">
+            You have <span className="text-[#D96B27] font-semibold">{pendingCases.length} cases</span> requiring your clinical diagnosis.
+          </p>
+        </div>
+
+        {/* شريط البحث وتصفيات الصفحة */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-72">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A9B89]" size={16} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search client, case ID..."
+              className="w-full pl-10 pr-4 py-2 text-xs bg-white border border-[#E4EBE3] rounded-xl focus:outline-none focus:border-[#1E3E1A] transition-all text-[#1E3E1A] placeholder:text-[#A39E93]"
+            />
+          </div>
+          <button className="p-2.5 bg-white border border-[#E4EBE3] rounded-xl text-[#1E3E1A] hover:bg-[#FAFBF9] transition-colors shrink-0">
+            <Filter size={16} />
+          </button>
+        </div>
       </div>
 
-      {/* القائمة الذكية المخصصة للموبايل والويب معاً */}
+      {/* قائمة الحالات */}
       {pendingCases.length === 0 ? (
         <motion.div 
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
-          className="bg-white rounded-2xl p-8 text-center border border-[#E4EBE3] text-[#6B7C6A]"
+          className="bg-white rounded-2xl p-12 text-center border border-[#E4EBE3] text-[#6B7C6A]"
         >
-          <AlertCircle className="mx-auto text-[#8A9B89] mb-2" size={32} />
-          <p className="text-sm">Great job! No pending cases at the moment.</p>
+          <AlertCircle className="mx-auto text-[#8A9B89] mb-3" size={36} />
+          <p className="text-sm font-medium">No pending cases found matching your search.</p>
         </motion.div>
       ) : (
         <motion.div 
@@ -79,13 +102,13 @@ export default function PendingCasesPage() {
               onClick={() => router.push(`/com/Expert/dashboard/cases/${item.id}`)}
               className="bg-white p-4 md:p-5 rounded-2xl border border-[#E4EBE3] shadow-sm cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all relative overflow-hidden group"
             >
-              {/* خط تجميلي جانبي يظهر نوع الحالة */}
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#E2B747]" />
+              {/* شريط جانبي ملون لتمييز الحالة */}
+              <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#E2B747]" />
 
-              {/* القسم الأيسر: معلومات المريض ونوع المشكلة */}
-              <div className="flex items-start gap-3 pl-2">
-                <div className="w-9 h-9 rounded-xl bg-[#FAFBF9] border border-[#E4EBE3] flex items-center justify-center text-[#1E3E1A] shrink-0 mt-0.5">
-                  <User size={16} />
+              {/* تفاصيل العميل والمشكلة */}
+              <div className="flex items-start gap-3.5 pl-2">
+                <div className="w-10 h-10 rounded-xl bg-[#FAFBF9] border border-[#E4EBE3] flex items-center justify-center text-[#1E3E1A] shrink-0 mt-0.5">
+                  <User size={18} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -96,28 +119,26 @@ export default function PendingCasesPage() {
                   </div>
                   <p className="text-xs text-[#4A5D49] mt-1 font-medium">{item.problemType}</p>
                   
-                  {/* تاريخ استلام الحالة */}
-                  <div className="flex items-center gap-1 text-[11px] text-[#8A9B89] mt-2">
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#8A9B89] mt-2">
                     <Calendar size={12} />
                     <span>Received: {item.receivedDate}</span>
                   </div>
                 </div>
               </div>
 
-              {/* القسم الأيمن: شارة الحالة وزر الانتقال */}
+              {/* شارة الحالة وزر الاستعراض */}
               <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-[#F0F4EF]">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#E2B747] animate-pulse" />
-                  <span className="text-xs font-semibold text-[#A47E1F] bg-[#E2B747]/10 px-2.5 py-1 rounded-full">
+                  <span className="text-xs font-semibold text-[#A47E1F] bg-[#E2B747]/10 px-2.5 py-1 rounded-full border border-[#E2B747]/20">
                     {item.status}
                   </span>
                 </div>
                 
-                <div className="text-[#8A9B89] group-hover:text-[#1E3E1A] transition-colors group-hover:translate-x-1 transition-transform hidden sm:block">
+                <div className="text-[#8A9B89] group-hover:text-[#1E3E1A] group-hover:translate-x-1 transition-all hidden sm:block">
                   <ChevronRight size={18} />
                 </div>
                 
-                {/* زر مخصص للموبايل فقط */}
                 <span className="sm:hidden text-xs font-bold text-[#1E3E1A] flex items-center gap-0.5">
                   Review Case <ChevronRight size={14} />
                 </span>
