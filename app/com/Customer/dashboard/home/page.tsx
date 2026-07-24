@@ -1,14 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, Variants } from 'framer-motion';
 import { Star, Plus, Heart, ArrowUpRight, ArrowLeft } from 'lucide-react';
 import { heroData, categories, bestsellers, quizBannerData } from './data';
 import Navbar from './Navbar';
+import CartDialog from '../shop/CartDialog'; // تأكد من صحة الـ Import حسب مجلدات مشروعك
+import ProfileDialog from './ProfileDialog'; // تأكد من صحة الـ Import
 
-// تم تحديد نوع Variants صراحةً حلًا لخطأ TypeScript أثناء الـ build
 const fadeInContainer: Variants = {
   hidden: { opacity: 0 },
   show: { 
@@ -32,9 +33,76 @@ const fadeInUp: Variants = {
 };
 
 export default function CustomerHomePage() {
+  // --- States للتحكم في السلة والبروفايل والـ Toast ---
+  const [cartItems, setCartItems] = useState<{ id: string | number; name: string; qty: number; price: number }[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const [userProfile, setUserProfile] = useState({
+    name: 'Ahmed Mohamed',
+    phone: '01012345678',
+    address: 'Mansoura, Egypt'
+  });
+
+  const totalCartCount = cartItems.reduce((acc, item) => acc + item.qty, 0);
+
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2800);
+  };
+
+  // دالة الإضافة للسلة
+  const handleAddToCart = (product: { id: string | number; name: string; price: number }, count: number = 1) => {
+    setCartItems(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + count } : item);
+      }
+      return [...prev, { id: product.id, name: product.name, qty: count, price: product.price }];
+    });
+    triggerToast(`Added ${product.name} to cart! 🛍️`);
+  };
+
+  // دالة تحديث الكمية داخل السلة
+  const updateQty = (id: string | number, delta: number) => {
+    setCartItems(prev => prev.map(item => 
+      item.id === id ? { ...item, qty: Math.max(0, item.qty + delta) } : item
+    ).filter(item => item.qty > 0));
+  };
+
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
+    <div className="min-h-screen bg-white relative">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#1E3E1A] text-white text-xs font-semibold px-5 py-3 rounded-xl shadow-lg border border-[#4A6B53] transition-all animate-bounce">
+          {toastMessage}
+        </div>
+      )}
+
+      {/* Navbar Mapped with State */}
+      <Navbar 
+        cartCount={totalCartCount} 
+        onCartClick={() => setIsCartOpen(true)} 
+        onProfileClick={() => setIsProfileOpen(true)} 
+      />
+
+      {/* Cart Dialog */}
+      <CartDialog 
+        isOpen={isCartOpen} 
+        onClose={() => setIsCartOpen(false)} 
+        cartItems={cartItems} 
+        onUpdateQty={updateQty}
+        userData={userProfile} 
+      />
+
+      {/* Profile Dialog */}
+      <ProfileDialog 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)}
+        profile={userProfile}
+        setProfile={setUserProfile}
+      />
 
       {/* 1. HERO SECTION */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
@@ -59,7 +127,7 @@ export default function CustomerHomePage() {
                 type="button"
                 whileHover={{ scale: 1.03, backgroundColor: '#152C12' }}
                 whileTap={{ scale: 0.97 }}
-                className="bg-[#1E3E1A] text-white font-medium px-6 py-3.5 rounded-full flex items-center gap-2 shadow-sm transition-colors group text-sm sm:text-base w-full sm:w-auto justify-center"
+                className="bg-[#1E3E1A] text-white font-medium px-6 py-3.5 rounded-full flex items-center gap-2 shadow-sm transition-colors group text-sm sm:text-base w-full sm:w-auto justify-center cursor-pointer"
               >
                 {heroData.buttonText}
                 <ArrowLeft size={18} className="transition-transform group-hover:-translate-x-1" />
@@ -176,11 +244,14 @@ export default function CustomerHomePage() {
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-[#F0F4EF]">
                 <span className="text-sm sm:text-base font-mono font-bold text-[#1E3E1A]">${prod.price}</span>
+                
+                {/* --- ربط الزرار بالحدث --- */}
                 <motion.button 
                   type="button"
                   whileHover={{ scale: 1.05 }} 
                   whileTap={{ scale: 0.95 }} 
-                  className="bg-[#1E3E1A]/5 hover:bg-[#1E3E1A] text-[#1E3E1A] hover:text-white transition-colors duration-300 text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1"
+                  onClick={() => handleAddToCart(prod)}
+                  className="bg-[#1E3E1A]/5 hover:bg-[#1E3E1A] text-[#1E3E1A] hover:text-white transition-colors duration-300 text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-1 cursor-pointer"
                 >
                   <Plus size={14} /> Add
                 </motion.button>

@@ -82,17 +82,6 @@ export default function Navbar({ cartCount: externalCartCount, onCartClick, onPr
                         EcoGlow
                     </Link>
 
-                    <div className="relative w-full max-w-md mx-8">
-                        <span className="absolute inset-y-0 left-4 flex items-center text-[#8A9B89]">
-                            <Search size={18} />
-                        </span>
-                        <input
-                            type="text"
-                            placeholder="Search products..."
-                            className="w-full bg-[#F0EDE6] text-[#1E3E1A] placeholder-[#8A9B89] text-sm rounded-full pl-12 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#6B8E73] transition-all"
-                        />
-                    </div>
-
                     <div className="flex items-center gap-8">
                         <div className="flex items-center gap-6">
                             {navLinks.map((link) => {
